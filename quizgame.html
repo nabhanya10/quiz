@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Taxonomy Quiz Game</title>
+  <style>
+    body {
+      background: linear-gradient(to bottom right, #a7d5f9, #d6f0f5);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: black;
+      padding: 20px;
+    }
+    h1 {
+      color: maroon;
+      font-weight: bold;
+      text-align: center;
+      font-size: 36px;
+      text-transform: uppercase;
+    }
+    .question {
+      font-size: 26px;
+      font-weight: bold;
+      margin: 20px 0 10px;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    .answer-button {
+      display: block;
+      margin: 10px auto;
+      padding: 14px;
+      background-color: white;
+      color: black;
+      border: 3px solid black;
+      border-radius: 50%;
+      cursor: pointer;
+      width: 250px;
+      text-align: center;
+      font-weight: bold;
+      transition: transform 0.2s, background-color 0.3s;
+    }
+    .answer-button:hover {
+      transform: scale(1.05);
+      background-color: #e0e0e0;
+    }
+    .answer-button.correct {
+      background-color: #8f8;
+    }
+    .answer-button.wrong {
+      background-color: #f88;
+    }
+    #score {
+      margin-top: 20px;
+      font-size: 24px;
+      text-align: center;
+      font-weight: bold;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Taxonomy Quiz Game</h1>
+  <div id="quiz"></div>
+  <div id="score"></div>
+
+  <audio id="correct-sound" src="https://www.soundjay.com/buttons/sounds/button-09.mp3" preload="auto"></audio>
+  <audio id="wrong-sound" src="https://www.soundjay.com/buttons/sounds/button-10.mp3" preload="auto"></audio>
+  <audio id="end-sound" src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" preload="auto"></audio>
+
+  <script>
+    const questions = [
+      { question: "Which kingdom includes multicellular, photosynthetic organisms?", answers: [
+        { text: "Plantae", correct: true },
+        { text: "Animalia", correct: false },
+        { text: "Fungi", correct: false },
+        { text: "Protista", correct: false }
+      ]},
+      { question: "Autotrophs produce their own food through what process?", answers: [
+        { text: "Photosynthesis", correct: true },
+        { text: "Respiration", correct: false },
+        { text: "Digestion", correct: false },
+        { text: "Fermentation", correct: false }
+      ]},
+      { question: "Which kingdom contains organisms that absorb nutrients from organic materials?", answers: [
+        { text: "Fungi", correct: true },
+        { text: "Plantae", correct: false },
+        { text: "Protista", correct: false },
+        { text: "Animalia", correct: false }
+      ]},
+      { question: "Molecular taxonomy classifies organisms based on:", answers: [
+        { text: "DNA and RNA sequences", correct: true },
+        { text: "Physical traits", correct: false },
+        { text: "Color", correct: false },
+        { text: "Size", correct: false }
+      ]},
+      { question: "Heterotrophs obtain energy by:", answers: [
+        { text: "Consuming other organisms", correct: true },
+        { text: "Producing light", correct: false },
+        { text: "Photosynthesis", correct: false },
+        { text: "Absorbing sunlight directly", correct: false }
+      ]},
+      { question: "Which kingdom contains prokaryotic organisms?", answers: [
+        { text: "Monera", correct: true },
+        { text: "Fungi", correct: false },
+        { text: "Protista", correct: false },
+        { text: "Plantae", correct: false }
+      ]},
+      { question: "Which of these is an example of a heterotroph?", answers: [
+        { text: "Human", correct: true },
+        { text: "Algae", correct: false },
+        { text: "Pine tree", correct: false },
+        { text: "Cyanobacteria", correct: false }
+      ]},
+      { question: "Which domain includes humans?", answers: [
+        { text: "Eukarya", correct: true },
+        { text: "Archaea", correct: false },
+        { text: "Bacteria", correct: false },
+        { text: "Monera", correct: false }
+      ]},
+      { question: "Which is true about organisms in the Animalia kingdom?", answers: [
+        { text: "They are multicellular and heterotrophic", correct: true },
+        { text: "They are unicellular and autotrophic", correct: false },
+        { text: "They perform photosynthesis", correct: false },
+        { text: "They absorb nutrients like fungi", correct: false }
+      ]},
+      { question: "Which tool helps in modern molecular taxonomy?", answers: [
+        { text: "DNA sequencing", correct: true },
+        { text: "Microscope", correct: false },
+        { text: "Magnifying glass", correct: false },
+        { text: "Petri dish", correct: false }
+      ]},
+      ...[...Array(40)].map((_, i) => ({
+        question: `Sample additional taxonomy question #${i + 11}?`,
+        answers: [
+          { text: "Option A", correct: true },
+          { text: "Option B", correct: false },
+          { text: "Option C", correct: false },
+          { text: "Option D", correct: false }
+        ]
+      }))
+    ];
+
+    let score = 0;
+    let currentQuestionIndex = 0;
+    const correctSound = document.getElementById("correct-sound");
+    const wrongSound = document.getElementById("wrong-sound");
+    const endSound = document.getElementById("end-sound");
+
+    function shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function showNextQuestion() {
+      const quizContainer = document.getElementById("quiz");
+      quizContainer.innerHTML = "";
+      const questionObj = questions[currentQuestionIndex];
+      const questionElem = document.createElement("div");
+      questionElem.classList.add("question");
+      questionElem.innerText = `${currentQuestionIndex + 1}. ${questionObj.question}`;
+      quizContainer.appendChild(questionElem);
+
+      const answers = [...questionObj.answers];
+      shuffle(answers);
+
+      answers.forEach((answer) => {
+        const button = document.createElement("button");
+        button.innerText = answer.text;
+        button.classList.add("answer-button");
+        button.onclick = () => handleAnswer(button, answer.correct);
+        quizContainer.appendChild(button);
+      });
+
+      document.getElementById("score").innerText = `Score: ${score}/${questions.length}`;
+    }
+
+    function handleAnswer(button, correct) {
+      const buttons = document.querySelectorAll(".answer-button");
+      buttons.forEach(btn => btn.disabled = true);
+
+      if (correct) {
+        correctSound.play();
+        score++;
+        button.classList.add("correct");
+      } else {
+        wrongSound.play();
+        button.classList.add("wrong");
+        buttons.forEach(btn => {
+          if (questions[currentQuestionIndex].answers.find(a => a.text === btn.innerText && a.correct)) {
+            btn.classList.add("correct");
+          }
+        });
+      }
+
+      currentQuestionIndex++;
+      setTimeout(() => {
+        if (currentQuestionIndex < questions.length) {
+          showNextQuestion();
+        } else {
+          endSound.play();
+          document.getElementById("quiz").innerHTML = "";
+          document.getElementById("score").innerText = `You scored ${score}/${questions.length}!`;
+        }
+      }, 1000);
+    }
+
+    showNextQuestion();
+  </script>
+</body>
+</html>
